@@ -1,0 +1,59 @@
+---
+title: "EDA.CreditScore"
+author: "Santiago Muriel"
+date: "12/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(corrplot)
+```
+
+Carga de archivos
+```{r}
+ruta <- "../Datos/"
+archivo1 <- "german_credit_data.csv"
+archivo2 <- "german.data"
+
+GCdata <- as.data.frame(read.csv(paste0(ruta,archivo1)))
+GCorginal <- as.data.frame(read.table(paste0(ruta,archivo2), sep = " ", header = F))
+
+# eliminamos la 1ra columna de GCdata (indice)
+GCdata <- GCdata[,-1]
+# completando el GCdata con la variable de "Default" -> (1 = bueno, 2 = malo)
+default <- GCorginal[,21]
+GCdata$Default=default
+```
+
+Análsis Exploratorio
+
+Análsis univariado
+```{r}
+summary(GCdata)
+```
+
+Tablas de contingencia
+```{r}
+# default según el sexo
+table(GCdata$Sex,GCdata$Default)
+```
+
+Análisis con variables categóricas
+```{r}
+
+```
+
+Análisis de Correlación
+```{r}
+#GCdata[,-10])
+```
+
+
+Scatter Plots
+```{r}
+
+```
+
+
+
