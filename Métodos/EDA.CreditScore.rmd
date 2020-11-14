@@ -3,11 +3,17 @@ title: "EDA.CreditScore"
 author: "Santiago Muriel"
 date: "12/11/2020"
 output: html_document
+editor_options: 
+  chunk_output_type: inline
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(corrplot)
+suppressMessages(library(corrplot))
+suppressMessages(library(GGally))
+suppressMessages(library(expss))
+suppressMessages(library(formattable))
+suppressMessages(library(gridExtra))
 ```
 
 Carga de archivos
@@ -24,36 +30,102 @@ GCdata <- GCdata[,-1]
 # completando el GCdata con la variable de "Default" -> (1 = bueno, 2 = malo)
 default <- GCorginal[,21]
 GCdata$Default=default
+
+# Resumen de variables (mismo orden de data frame)
+# 1. Age (numeric)
+# 2. Sex (text: male, female)
+# 3. Job (numeric: 0 - unemployed, 1 - unskilled/resident, 2 - skilled, 3 - highly skilled)
+# 4. Housing (text: own, rent, or free)
+# 5. Saving accounts (text - little, moderate, quite rich, rich)
+# 6. Checking account (numeric, in DM - Deutsch Mark)
+# 7. Credit amount (numeric, in DM)
+# 8. Duration (numeric, in month)
+# 9. Purpose (text: car, furniture/equipment, radio/TV, domestic appliances, repairs, education, business, vacation/others) 
+# 10. Default (1 - good, 2 - bad)
+
+names(GCdata)[c(5,6,7)] <- c("Savings","Checking.Acc","C.Amount")
+head(apply_labels(GCdata,
+             Job = c("Unemployed" = 0, "Resident" = 1, "Skilled" = 2, "Officer" = 3),
+             Default = c("Bueno" = 1, "Malo"=2)),10)
 ```
 
 Análsis Exploratorio
 
 Análsis univariado
 ```{r}
+# estadísticas univariadas
 summary(GCdata)
-```
 
-Tablas de contingencia
-```{r}
-# default según el sexo
-table(GCdata$Sex,GCdata$Default)
-```
-
-Análisis con variables categóricas
-```{r}
-
+# densidades (para variables continuas o no categóricas)
+#par(mfrow=c(2,2)) # para agrupar las gráficas en una solo visualización
+plot(density(subset(GCdata, Default == 2)$Age), main = "Distribución de Edad", col = 'red')
+lines(density(subset(GCdata, Default == 1)$Age), col = 'green')
+legend("topright", legend = c("Bueno","Malo"), 
+       col = c("green","red"), lwd = c(2,2))
+plot(density(subset(GCdata, Default == 1)$C.Amount), main = "Distribución de Monto del crédito", col = 'green')
+lines(density(subset(GCdata, Default == 2)$C.Amount), col = 'red')
+legend("topright", legend = c("Bueno","Malo"), 
+       col = c("green","red"), lwd = c(2,2))
+plot(density(subset(GCdata, Default == 1)$Duration), main = "Distribución de Duración del crédito", col = 'green')
+lines(density(subset(GCdata, Default == 2)$Duration), col = 'red')
+legend("topright", legend = c("Bueno","Malo"), 
+       col = c("green","red"), lwd = c(2,2))
 ```
 
 Análisis de Correlación
 ```{r}
-#GCdata[,-10])
+# corrplot
+corrplot(cor(GCdata[-c(2,4,5,6,9)]), method = "ellipse")
 ```
-
 
 Scatter Plots
 ```{r}
+# scatter plots general
+pairs(GCdata[-10], col = GCdata[,10] +2, cex = 1.2) #clasificamos por default (verde = bueno)
+# zoom in a las relaciones más interesantes
+pairs(GCdata[-c(2:6,10)], col = GCdata[,10] +2, cex = 1.2)
+
+# comparaciones por sexo
+#par(mfrow = c(2,2)) # para agrupar las gráficas en una solo visualización
+boxplot(GCdata$Age ~ GCdata$Sex, main = "Edades x sexo", xlab = "Sexo", ylab = "Edad")
+# edades por sexo
+boxplot(GCdata$C.Amount ~ GCdata$Sex, main = "Monto del crédito x Sexo", xlab = "Sexo", ylab = "Monto del crédito")
+# edades por sexo
+boxplot(GCdata$Duration ~ GCdata$Sex, main = "Duración del credíto x Sexo", xlab = "Sexo", ylab = "Duración del credíto")
 
 ```
 
+Tablas de contingencia (análisis con variables categóricas)
+```{r}
+# Análisis por Default (1=bueno, 2=malo)
+tabla1 <- table(GCdata$Sex,GCdata$Default, dnn = c("Sexo","Pagador"))# según el sexo
+cbind(tabla1,"Default(%)" = round(tabla1[,2]/sum_row(tabla1)*100,2))
 
+tabla2 <- table(GCdata$Job,GCdata$Default, dnn = c("Job","Pagador")) # según el trabajo
+rownames(tabla2) <- c("Unemployed", "Resident", "Skilled", "Officer")
+cbind(tabla2,"Default(%)" = round(tabla2[,2]/sum_row(tabla2)*100,2))
+
+tabla3 <- table(GCdata$Housing,GCdata$Default, dnn = c("Housing","Pagador")) # según el Housing
+cbind(tabla3,"Default(%)" = round(tabla3[,2]/sum_row(tabla3)*100,2))
+
+tabla4 <- table(GCdata$Savings,GCdata$Default, useNA = "ifany", dnn = c("Savings","Pagador"))
+cbind(tabla4,"Default(%)" = round(tabla4[,2]/sum_row(tabla4)*100,2))
+
+tabla5 <- table(GCdata$Checking.Acc,GCdata$Default, useNA = "ifany", dnn = c("Checking Account","Pagador"))
+cbind(tabla5,"Default(%)" = round(tabla5[,2]/sum_row(tabla5)*100,2))
+
+tabla6 <- table(GCdata$Purpose,GCdata$Default, dnn = c("Purpose","Pagador"))
+cbind(tabla6,"Default(%)" = round(tabla6[,2]/sum_row(tabla6)*100,2))
+
+# usando el paquete expss para Cross-Tabulation
+#CT <- cro(list(GCdata$Sex, GCdata$Job, GCdata$Housing, GCdata$Savings, GCdata$Checking.Acc, GCdata$Purpose), GCdata$Default, total_label = NULL)
+#colnames(CT) <- c("Categoría","Bueno", "Malo")
+#print(CT)
+```
+
+
+Gráficas de coordenadas paralelas
+```{r}
+ggparcoord(GCdata,columns=1:9,groupColumn="Default")
+```
 
