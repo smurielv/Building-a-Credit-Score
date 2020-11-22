@@ -62,10 +62,12 @@ plot(density(subset(GCdata, Default == 2)$Age), main = "Distribución de Edad", 
 lines(density(subset(GCdata, Default == 1)$Age), col = 'green')
 legend("topright", legend = c("Bueno","Malo"), 
        col = c("green","red"), lwd = c(2,2))
+
 plot(density(subset(GCdata, Default == 1)$C.Amount), main = "Distribución de Monto del crédito", col = 'green')
 lines(density(subset(GCdata, Default == 2)$C.Amount), col = 'red')
 legend("topright", legend = c("Bueno","Malo"), 
        col = c("green","red"), lwd = c(2,2))
+
 plot(density(subset(GCdata, Default == 1)$Duration), main = "Distribución de Duración del crédito", col = 'green')
 lines(density(subset(GCdata, Default == 2)$Duration), col = 'red')
 legend("topright", legend = c("Bueno","Malo"), 
