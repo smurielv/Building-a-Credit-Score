@@ -1,0 +1,144 @@
+---
+title: "Bayesian Network of German Credit Data"
+author: "Santiago Muriel"
+date: "21/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(deal)
+library(bnlearn)
+```
+
+Carga de archivos
+```{r}
+ruta <- "../Datos/"
+archivo1 <- "german_credit_data.csv"
+archivo2 <- "german.data"
+
+GCdata <- as.data.frame(read.csv(paste0(ruta,archivo1)))
+GCorginal <- as.data.frame(read.table(paste0(ruta,archivo2), sep = " ", header = F))
+```
+
+Preparamos el data set
+```{r}
+# eliminamos la 1ra columna de GCdata (indice)
+GCdata <- GCdata[,-1]
+# completando el GCdata con la variable de "Default" -> (1 = bueno, 2 = malo)
+default <- factor(GCorginal[,21])
+GCdata$Default=default
+names(GCdata)[c(5,6,7)] <- c("Savings","Checking.Acc","C.Amount")
+
+# Saving y Checking Account como factores
+GCdata<-GCdata %>%
+    mutate(Savings=ifelse(is.na(Savings),0, Savings)) %>%
+    mutate(Checking.Acc= ifelse(is.na(Checking.Acc), 0, Checking.Acc))
+GCdata$Savings<-factor(GCdata$Savings)
+GCdata$Checking.Acc<-factor(GCdata$Checking.Acc)
+
+# Job como factor
+GCdata$Job <- factor(GCdata$Job)
+
+#Dividimos Age en 3 partes de acuerdo al EDA:
+# 1: Age < 32
+# 2: Age < 55
+# 3: Age >= 55
+GCdata <- GCdata %>%
+  mutate(Age=ifelse(Age < 32, 1, ifelse(Age < 55,2,3)))
+GCdata$Age <- factor(GCdata$Age)
+
+#Dividimos C.Amount en 4 partes de acuerdo al EDA:
+# 1: C.Amount < 500
+# 2: C.Amount < 4100
+# 3: C.Amount < 10,000
+# 4: C.Amount >= 10,000
+GCdata <- GCdata %>%
+  mutate(C.Amount=ifelse(C.Amount < 500, 1, 
+  ifelse(C.Amount < 4100,2,ifelse(C.Amount < 10000,3,4))))
+GCdata$C.Amount <- factor(GCdata$C.Amount)
+
+#Dividimos Duration en 4 partes de acuerdo al EDA:
+# 1: Duration < 17
+# 2: Duration < 22
+# 3: Duration < 27
+# 4: Duration >= 27
+GCdata<-GCdata %>%
+  mutate(Duration=ifelse(Duration < 17, 1, ifelse(Duration < 22,2,
+  ifelse(Duration < 27,3,4))))
+GCdata$Duration<-factor(GCdata$Duration)
+
+head(GCdata,5)
+```
+
+Creamos el data set de prueba y el de validación
+```{r}
+set.seed(1)
+n <- dim(GCdata)[1]
+filas <- sort(sample(n, round(n*.8)))
+dataTrain <- GCdata[filas, ]
+dataVal <- GCdata[-filas, ]
+
+head(dataTrain,5)
+
+#nota: falta checar que la partición mantiene la estructura original de los datos, aunque no se si tengas que hacerlo .. Pablo
+```
+
+Construcción de la Red Bayesiana
+```{r}
+# Hill-Climbing: hill climbing greedy search that explores the space of the directed acyclic graphs
+Red1 <- hc(dataTrain, score = "k2") # scores: k2, loglik, aic, bic, etc.
+Red1
+plot(Red1)
+#graphviz.plot(Red1)
+
+# Max-Min Hill-Climbing: a hybrid algorithm which combines the Max-Min Parents and Children algorithm (to restrict the search space) and the Hill-Climbing algorithm (to find the optimal network structure in the restricted space).
+Red2 <- mmhc(dataTrain)
+Red2
+plot(Red2)
+
+# Hybrid HPC: a hybrid algorithm combining HPC and hill-climbing.
+Red3 <- h2pc(dataTrain)
+Red3
+plot(Red3)
+
+
+#Looking for Candidate BNs
+bn1 <- bn.fit(Red1, data = dataTrain)
+# Pablo: no se cómo calculaste las Probas de la red pero yo vi esto en el libro, nose que tan bien jale
+
+```
+
+Querying the BN
+```{r}
+# conjunto de prueba
+head(dataVal,5)
+
+# ejemplo del query para la primera observación de dataVal
+cpquery(bn1, event = (Default == 2),
+        evidence = (Age == 1) & (Sex == "male") & (Job == 2) & 
+        (Housing == "own") & (Savings == 0) & (Checking.Acc == 1) &
+        (C.Amount == 3) & (Duration == 4) & (Purpose == "business"))
+# PAU: algo no le está gustando en "evidence", por eso da P = 0
+
+# corriendo la simulación para N = 100
+N <- 100
+prob1 <- numeric(N)
+prob2 <- numeric(N)
+for (i in 1:N) 
+{
+  prob1[i] <- cpquery(bn1, event = (Default == 1),
+        evidence = (Job == 2) & (Housing == "free") & (Savings == 1) & 
+        (Checking.Acc == 1) & (Duration == 2) & (Purpose == "car"))#, method = "lw")
+  prob2[i] <- cpquery(bn1, event = (Default == 2),
+        evidence = (Job == 2) & (Housing == "free") & (Savings == 1) & 
+        (Checking.Acc == 1) & (Duration == 2) & (Purpose == "car"))#, method = "lw")
+}
+summary(cbind(prob1,prob2))
+
+
+
+
+```
+

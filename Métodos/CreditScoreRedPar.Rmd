@@ -1,6 +1,8 @@
 ---
 title: "CreditScoreRedPar"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
@@ -44,9 +46,9 @@ GCdata$Default=default
 # 10. Default (1 - good, 2 - bad)
 
 names(GCdata)[c(5,6,7)] <- c("Savings","Checking.Acc","C.Amount")
-head(apply_labels(GCdata,
-             Job = c("Unemployed" = 0, "Resident" = 1, "Skilled" = 2, "Officer" = 3),
-             Default = c("Bueno" = 1, "Malo"=2)),10)
+#head(apply_labels(GCdata,
+#             Job = c("Unemployed" = 0, "Resident" = 1, "Skilled" = 2, "Officer" = 3),
+#             Default = c("Bueno" = 1, "Malo"=2)),10)
 ```
 
 ```{r}
@@ -77,6 +79,7 @@ GCdata$Checking.Acc<-factor(GCdata$Checking.Acc)
 
 head(GCdata,20)
 ```
+
 ```{r}
 #Hicimos Age como factor donde 
 # 1: age<50
@@ -93,6 +96,7 @@ GCdata$Job<-factor(GCdata$Job)
 
 head(GCdata,20)
 ```
+
 ```{r}
 #convertimos el credit amount a factores:
 # 1: C.Amount<1500
@@ -109,6 +113,7 @@ GCdata$C.Amount<-factor(GCdata$C.Amount)
 head(GCdata,20)
 ```
 
+
 ```{r}
 #Dividimos duration en 2 partes donde el parteaguas es la media:
 # 1: Duration <21
@@ -119,6 +124,7 @@ GCdata<-GCdata %>%
 GCdata$Duration<-factor(GCdata$Duration)
 
 ```
+
 
 ```{r}
 #cambiamos default a factor
@@ -186,15 +192,15 @@ thebest2 <- ksl.heuristic$nw
 savenet(thebest2, con=file("ksl.net"))
 
 ```
+
+
 ```{r}
 library(bnlearn)
-```
 
-```{r}
-
-GCprueba2 <- hc(GCdata, score = "k2")
+# Hill-Climbing: hill climbing greedy search that explores the space of the directed acyclic graphs
+GCprueba2 <- hc(GCdata, score = "k2")# scores: loglik, aic, bic, etc.
 GCprueba2
-
 plot(GCprueba2, main="Bayesian Network Credit Score")
+
 ```
 
