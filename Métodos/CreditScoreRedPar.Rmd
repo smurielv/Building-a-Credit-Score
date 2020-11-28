@@ -143,7 +143,7 @@ GCdata_network<-network(GCdata)
 
 #make joint prior distribution
 GCdata_prior<-jointprior(GCdata_network)
-draw_net<-drawnetwork(GCdata_network, GCdata, GCdata_prior)
+#draw_net<-drawnetwork(GCdata_network, GCdata, GCdata_prior)
 
 # learn the initial network
 GCdata_network <- learn(GCdata_network,GCdata,GCdata_prior)$nw
