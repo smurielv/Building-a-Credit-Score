@@ -57,7 +57,7 @@ Análsis univariado
 summary(GCdata)
 
 # densidades (para variables continuas o no categóricas)
-#par(mfrow=c(2,2)) # para agrupar las gráficas en una solo visualización
+par(mfrow=c(2,2)) # para agrupar las gráficas en una solo visualización
 plot(density(subset(GCdata, Default == 2)$Age), main = "Distribución de Edad", col = 'red')
 lines(density(subset(GCdata, Default == 1)$Age), col = 'green')
 legend("topright", legend = c("Bueno","Malo"), 
@@ -76,7 +76,7 @@ legend("topright", legend = c("Bueno","Malo"),
 
 Análisis de Correlación
 ```{r}
-# corrplot
+# corrplot (sólo tomamos las variables numéricas)
 corrplot(cor(GCdata[-c(2,4,5,6,9)]), method = "ellipse")
 ```
 
@@ -87,15 +87,20 @@ pairs(GCdata[-10], col = GCdata[,10] +2, cex = 1.2) #clasificamos por default (v
 # zoom in a las relaciones más interesantes
 pairs(GCdata[-c(2:6,10)], col = GCdata[,10] +2, cex = 1.2)
 
+```
+
+
+Box Plots
+```{r}
 # comparaciones por sexo
-#par(mfrow = c(2,2)) # para agrupar las gráficas en una solo visualización
+par(mfrow = c(1,3)) # para agrupar las gráficas en una solo visualización
 boxplot(GCdata$Age ~ GCdata$Sex, main = "Edades x sexo", xlab = "Sexo", ylab = "Edad")
 # edades por sexo
 boxplot(GCdata$C.Amount ~ GCdata$Sex, main = "Monto del crédito x Sexo", xlab = "Sexo", ylab = "Monto del crédito")
 # edades por sexo
 boxplot(GCdata$Duration ~ GCdata$Sex, main = "Duración del credíto x Sexo", xlab = "Sexo", ylab = "Duración del credíto")
-
 ```
+
 
 Tablas de contingencia (análisis con variables categóricas)
 ```{r}
